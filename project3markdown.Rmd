@@ -77,10 +77,11 @@ glimpse(happiness)
 
 ## Happiness by Region
 
-The following plot depicts the overall `Ladder score` by region. Numerous countries in the datatset had 2 regions listed, but I only want to use the primary region of a country for easy comparison. I used dplyr's `separate()` function to separate `Regional indicator` into `primary_region` and `secondary_region`, where `primary_region` will be the variable used in the plot.
+The following plot depicts the overall `Ladder score` by region. Numerous countries in the datatset had 2 regions listed, but I only want to use the primary region of a country for easy comparison. I used dplyr's `separate()` function to separate `Regional indicator` into `primary_region` and `secondary_region`, where `primary_region` will be the variable used in the plot. The dplyr `mutate()` function was used to preserve "Central and Eastern Europe" as an observation in `primary_region`, as using the `separate()` function initially messed with the string.
 
 ```{r, echo = TRUE}
 happiness_region <- happiness %>%
+  mutate(`Regional indicator` = if_else(`Regional indicator` == "Central and Eastern Europe", "Central/Eastern Europe", `Regional indicator`)) %>%
   separate(col = "Regional indicator", 
            into = c("primary_region", "secondary_region"), 
            sep = " and ")
