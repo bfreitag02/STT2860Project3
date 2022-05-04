@@ -1,0 +1,127 @@
+---
+title: "STT2860 Project 3 - Final Presentation: R Data Visualization of World Happiness Report 2021"
+author: "Author: Bradley R Freitag"
+date: "`r format(Sys.time(), '%B %d, %Y @ %I:%M %p')`"
+output: ioslides_presentation
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  comment = NA
+)
+
+save.image(file = "data/project3markdown.RData")
+```
+
+## Packages Used
+
+I used the `tidyverse` package for data manipulation using `dplyr` and plotting using `ggplot2`.
+
+```{r, echo = TRUE}
+library(tidyverse)
+```
+
+## World Happiness Report Dataset
+
+The following dataset, derived from *kaggle.com*, depicts the 2021 World Happiness Report. A landmark survey of global happiness, 149 countries contributed data from its citizens about their perceived happiness, accounted for by six factors. The report and reports alike are used by these nations and world scholars to assess a nation's progress according to citizen well-being. This presentation will delve into the contents of this datatset and two ways the data can be visualized to describe variations in world happiness based upon the data.
+
+```{r, echo = TRUE}
+happiness <- read_csv("data/world-happiness-report-2021.csv")
+```
+
+##
+
+```{r, echo = TRUE}
+glimpse(happiness)
+```
+
+## Variables in the Dataset: Country and Happiness Score
+
+* `Country name` - name of Country
+* `Regional indicator` - approximate geographic region of Country
+* `Ladder score` - overall score of happiness (received from the Gallup World Poll)
+  + `Standard error of ladder score` - standard error of score of happiness
+  + `upperwhisker` - upper whisker of happiness score standard error
+  + `lowerwhisker` - lower whisker of happiness score standard error
+  
+## Variables in the Dataset: Dystopia
+
+* `Ladder score in Dystopia` - constant score for each observation which describes the overall happiness score for a hypothetical Country with values equal to the lowest national averages for each of the Six Factors
+  + `Dystopia + residual` - comparison between a Country's happiness or ladder score and the `Ladder score in Dystopia`, explaining why some countries rank higher than others
+
+## Variables in the Dataset: Six Factors of National Happiness
+
+  + `Logged GDP per capita` - gross domestic product per capita for each Country
+    + `Explained by: Log GDP per capita` - degree to which `Logged GDP per capita` explains the happiness score for a Country
+  + `Social support` - degree of social support and resources available to a Country's citizens
+    + `Explained by: Social support` -  - degree to which `Social support` explains the happiness score for a Country
+
+## Variables in the Dataset: Six Factors of National Happiness
+
+  + `Healthy life expectancy` - average life expectancy of a Country
+    + `Explained by: Healthy life expectancy` -  - degree to which `Healthy life expectancy` explains the happiness score for a Country
+  + `Freedom to make life choices` - degree of personal freedom among citizens in a Country
+    + `Explained by: Freedom to make life choices` - degree to which `Freedom to make life choices` explains the happiness score for a Country
+
+## Variables in the Dataset: Six Factors of National Happiness
+
+  + `Generosity` - overall generosity of a Country and its citizens
+    + `Explained by: Generosity` -  - degree to which `Generosity` explains the happiness score for a Country
+  + `Perceptions of corruption` - overall thoughts or feelings of corruption within a Country among its citizens
+    + `Explained by: Perceptions of corruption` -  - degree to which `Perceptions of corruption` explains the happiness score for a Country
+
+# Data Plots
+
+## Happiness by Region
+
+The following plot depicts the overall `Ladder score` by region. Numerous countries in the datatset had 2 regions listed, but I only want to use the primary region of a country for easy comparison. I used dplyr's `separate()` function to separate `Regional indicator` into `primary_region` and `secondary_region`, where `primary_region` will be the variable used in the plot.
+
+```{r, echo = TRUE}
+happiness_region <- happiness %>%
+  separate(col = "Regional indicator", 
+           into = c("primary_region", "secondary_region"), 
+           sep = " and ")
+```
+
+##
+
+```{r firstplot, echo = TRUE, fig.align = "center"}
+ggplot(happiness_region, aes(primary_region, `Ladder score`, color = primary_region)) + 
+  geom_boxplot(aes(reorder(primary_region, `Ladder score`))) + 
+  labs(title = "Happiness by Region", subtitle =  "Regions reordered by ascending `Ladder score`", x = "Region", y = "Ladder or Happiness score", color = "Region by Color") + 
+  theme(axis.text.x = element_text(size = 5, angle = 65), legend.position = "right") + 
+  scale_y_continuous(breaks = seq(0, 8, 1))
+```
+
+## Dystopian Residual Scores by Region
+
+While the last plot looked at the Happiness Ladder scores across regions, the next plot will depict the average residual Dystopian scores between regions, only this time it's a bar plot instead of a boxplot. Average `Dystopian + residual` scores per region have been collected and rounded to 3 digit points using the following code:
+
+```{r, echo = TRUE}
+happiness_dystopia <- happiness_region %>%
+  group_by(primary_region) %>%
+  summarize("dystopia_avg" = mean(`Dystopia + residual`)) %>%
+  mutate_if(is.numeric, round, digits = 3)
+```
+
+The following graph depicts each region's average placement on the `Dystopia + residual` scale. The `Ladder score in Dystopia` constant value is indicated by the straight horizontal line. *Notice which regions are above the line and which are below.*
+
+##
+
+```{r secondplot, fig.align = "center", echo = TRUE}
+ggplot(happiness_dystopia) + 
+  geom_col(aes(primary_region, dystopia_avg, fill = primary_region)) + 
+  geom_text(aes(primary_region, dystopia_avg, label = dystopia_avg), vjust = 0) + 
+  geom_hline(yintercept = 2.43) + 
+  theme(axis.text.x = element_text(size = 5, angle = 35)) + 
+  labs(title = "Dystopia Score Average Residuals by Region", x = "Region", y = "Average Residual Score", fill = "Primary Region by Color")
+```
+
+# Fin
+
+Reference:
+
+https://www.kaggle.com/datasets/ajaypalsinghlo/world-happiness-report-2021
